@@ -4,6 +4,7 @@ import gamesData from './games.json';
 import GameCard from './components/GameCard';
 import GamePlay from './components/GamePlay';
 import IntroScreen from './components/IntroScreen';
+import GoogleSignIn from './components/GoogleSignIn';
 import { HelpCircle } from 'lucide-react';
 
 export default function App() {
@@ -14,18 +15,41 @@ export default function App() {
   const [searchQuery, setSearchQuery] = useState('');
   const [activeCategory, setActiveCategory] = useState('All');
   const [favorites, setFavorites] = useState([]);
+  const [currentUser, setCurrentUser] = useState(null);
 
-  // Load favorites from local storage on render
+  // Load favorites and custom user from local storage on render
   useEffect(() => {
     try {
       const saved = localStorage.getItem('nova_arcade_favorites');
       if (saved) {
         setFavorites(JSON.parse(saved));
       }
+      const savedUser = localStorage.getItem('nova_arcade_user');
+      if (savedUser) {
+        setCurrentUser(JSON.parse(savedUser));
+      }
     } catch (e) {
-      console.error('Error loading favorites:', e);
+      console.error('Error loading cache:', e);
     }
   }, []);
+
+  const handleSignIn = (user) => {
+    setCurrentUser(user);
+    try {
+      localStorage.setItem('nova_arcade_user', JSON.stringify(user));
+    } catch (e) {
+      console.error('Error saving user session:', e);
+    }
+  };
+
+  const handleSignOut = () => {
+    setCurrentUser(null);
+    try {
+      localStorage.removeItem('nova_arcade_user');
+    } catch (e) {
+      console.error('Error removing user session:', e);
+    }
+  };
 
   // Save favorites helper
   const toggleFavorite = (gameId, e) => {
@@ -117,9 +141,13 @@ export default function App() {
                   className="bg-transparent outline-none text-[10px] sm:text-xs font-bold uppercase w-16 xs:w-24 sm:w-36 text-white placeholder-zinc-650 font-mono"
                 />
               </div>
-              <div className="flex gap-2">
-                <div className="w-8 h-8 bg-zinc-800 rounded-full flex items-center justify-center border border-zinc-700 font-black text-xs text-zinc-300 font-mono">?</div>
-                <div className="w-8 h-8 bg-brand-fuchsia rounded-full flex items-center justify-center border border-white font-black text-xs text-black font-mono">N</div>
+              <div className="flex items-center gap-3">
+                <div className="w-8 h-8 bg-zinc-800 hover:bg-zinc-700 rounded-full flex items-center justify-center border border-zinc-700 font-black text-xs text-zinc-300 font-mono cursor-pointer transition-colors" title="Nova Arcade Info">?</div>
+                <GoogleSignIn 
+                  onSignIn={handleSignIn}
+                  onSignOut={handleSignOut}
+                  currentUser={currentUser}
+                />
               </div>
             </div>
           </header>
@@ -164,6 +192,15 @@ export default function App() {
                 <h3 className="text-xs font-bold mb-1 uppercase text-zinc-300">SYSTEM STATUS</h3>
                 <p className="text-[10px] text-zinc-500 leading-tight uppercase">Platform loaded: {games.length} games available.</p>
                 <p className="text-[10px] text-zinc-500 leading-tight uppercase mt-1">Plays count: {totalPlaysCount.toLocaleString()}</p>
+                {currentUser ? (
+                  <p className="text-[10px] text-emerald-400 font-bold leading-tight uppercase mt-2">
+                    ● AUTHENTICATED: {currentUser.email}
+                  </p>
+                ) : (
+                  <p className="text-[10px] text-amber-500 font-bold leading-tight uppercase mt-2">
+                    ○ SESSION: UNREGISTERED (GUEST)
+                  </p>
+                )}
               </div>
             </aside>
 
@@ -180,6 +217,20 @@ export default function App() {
                     className="space-y-6"
                     id="lobby-view"
                   >
+                    {currentUser && (
+                      <motion.div
+                        initial={{ opacity: 0, y: -10 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        className="bg-zinc-900/60 border border-brand-fuchsia/40 rounded-lg p-4 font-mono flex flex-col sm:flex-row items-baseline sm:items-center justify-between gap-2 shadow-[0_0_15px_rgba(217,70,239,0.05)]"
+                      >
+                        <div>
+                          <span className="text-brand-fuchsia font-black text-xs uppercase block tracking-wider">WELCOME BACK, CHAMPION</span>
+                          <span className="text-sm text-zinc-300 font-bold">Authenticated as <span className="text-white">{currentUser.name}</span> ({currentUser.email})</span>
+                        </div>
+                        <span className="text-[10px] text-zinc-500 uppercase bg-zinc-950 px-2.5 py-1 border border-zinc-800 rounded">Session Secure</span>
+                      </motion.div>
+                    )}
+
                     {/* Active Category Display Bar */}
                     <div className="flex items-center justify-between border-b border-zinc-800 pb-4">
                       <h2 className="text-2xl font-display font-black uppercase tracking-tight text-white flex items-center gap-2">
