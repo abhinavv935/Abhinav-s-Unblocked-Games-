@@ -1,0 +1,6 @@
+{
+  "name": "Unblocked Games",
+  "description": "A curated collection of classical web games played inside secure, responsive iframe frames.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
